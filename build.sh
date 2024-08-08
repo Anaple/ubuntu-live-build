@@ -57,11 +57,11 @@ export EXTRA_PPAS="jjriek/rockchip jjriek/rockchip-multimedia"
 
 # Populate the configuration directory for live build
 lb config \
-	--architecture arm64 \
-	--bootstrap-qemu-arch arm64 \
-	--bootstrap-qemu-static /usr/bin/qemu-aarch64-static \
-	--archive-areas "main restricted universe multiverse" \
-	--parent-archive-areas "main restricted universe multiverse" \
+    --architecture arm64 \
+    --bootstrap-qemu-arch arm64 \
+    --bootstrap-qemu-static /usr/bin/qemu-aarch64-static \
+    --archive-areas "main restricted universe multiverse" \
+    --parent-archive-areas "main restricted universe multiverse" \
     --mirror-bootstrap "http://ports.ubuntu.com" \
     --parent-mirror-bootstrap "http://ports.ubuntu.com" \
     --mirror-chroot-security "http://ports.ubuntu.com" \
@@ -73,10 +73,30 @@ lb config \
     --keyring-packages ubuntu-keyring \
     --linux-flavours rockchip
 
-# Add chroot tweaks and archives
-cp ../001-tweaks.chroot config/hooks/
-cp ../extra-ppas.pref.chroot config/archives/
-cp ../extra-ppas-ignore.pref.chroot config/archives/
+# Pin rockchip package archives
+(
+    echo "Package: *"
+    echo "Pin: release o=LP-PPA-jjriek-rockchip"
+    echo "Pin-Priority: 1001"
+    echo ""
+    echo "Package: *"
+    echo "Pin: release o=LP-PPA-jjriek-rockchip-multimedia"
+    echo "Pin-Priority: 1001"
+) > config/archives/extra-ppas.pref.chroot
+
+if [ "$SUITE" == "noble" ]; then
+    # Ignore custom ubiquity package (mistake i made, uploaded to wrong ppa)
+    (
+        echo "Package: oem-*"
+        echo "Pin: release o=LP-PPA-jjriek-rockchip-multimedia"
+        echo "Pin-Priority: -1"
+        echo ""
+        echo "Package: ubiquity*"
+        echo "Pin: release o=LP-PPA-jjriek-rockchip-multimedia"
+        echo "Pin-Priority: -1"
+
+    ) > config/archives/extra-ppas-ignore.pref.chroot
+fi
 
 sed -i 's/libgl1-amber-dri//g' config/package-lists/livecd-rootfs.list.chroot_install
 
